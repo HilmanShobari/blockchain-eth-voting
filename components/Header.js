@@ -1,24 +1,16 @@
-import React from "react";
-import { Menu } from "semantic-ui-react";
-import { Link } from "../routes";
+import React from 'react';
+import { Menu } from 'semantic-ui-react';
+import { Link } from '../routes';
 
 const Header = () => {
   return (
-    <Menu style={{ marginTop: "10px" }}>
+    <div style={{ marginTop: '20px', marginBottom: '20px' }}>
       <Link route="/">
-        <a className="item">Voting Maker</a>
+        <a className="item" style={{ textDecoration: 'none', color: 'black', fontWeight: 'bold', fontSize: '1.5rem' }}>
+          E Vote Block
+        </a>
       </Link>
-
-      <Menu.Menu position="right">
-        <Link route="/">
-          <a className="item">Votings</a>
-        </Link>
-
-        <Link route="/votings/new">
-          <a className="item">+</a>
-        </Link>
-      </Menu.Menu>
-    </Menu>
+    </div>
   );
 };
 
