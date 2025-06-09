@@ -1,19 +1,18 @@
-import React, { Component } from "react";
-import Layout from "../../components/Layout";
-import { Button, Form, Input, Message } from "semantic-ui-react";
-import factory from "../../ethereum/factory";
-import web3 from "../../ethereum/web3";
-import { Router } from "../../routes";
-import DatePicker from "react-datepicker";
+import React, { Component } from 'react';
+import Layout from '../../components/Layout';
+import { Button, Form, Input, Message } from 'semantic-ui-react';
+import factory from '../../ethereum/factory';
+import web3 from '../../ethereum/web3';
+import { Router } from '../../routes';
+import DatePicker from 'react-datepicker';
 
-import "react-datepicker/dist/react-datepicker.css";
+import 'react-datepicker/dist/react-datepicker.css';
 
 class VotingNew extends Component {
   state = {
-    numberOfChoice : "",
-    endDate : "",
-    votingFee: "",
-    errorMessage: "",
+    numberOfChoice: '',
+    endDate: '',
+    errorMessage: '',
     successMessage: false,
     loading: false,
   };
@@ -21,7 +20,7 @@ class VotingNew extends Component {
   onSubmit = async (event) => {
     event.preventDefault();
 
-    this.setState({ loading: true, errorMessage: "", successMessage: false });
+    this.setState({ loading: true, errorMessage: '', successMessage: false });
 
     try {
       const startDateTimestamp = Math.floor(new Date().getTime() / 1000);
@@ -29,15 +28,12 @@ class VotingNew extends Component {
 
       const accounts = await web3.eth.getAccounts();
       console.log(accounts[0]);
-      await factory.methods
-        .createVoting(this.state.numberOfChoice,startDateTimestamp, endDateTimestamp)
-        .send({
-          from: accounts[0],
-          value: web3.utils.toWei(this.state.votingFee, 'ether')
-        });
+      await factory.methods.createVoting(this.state.numberOfChoice, startDateTimestamp, endDateTimestamp).send({
+        from: accounts[0],
+      });
 
-        // this.setState({ successMessage: true });
-        Router.pushRoute('/');
+      // this.setState({ successMessage: true });
+      Router.pushRoute('/');
     } catch (err) {
       this.setState({ errorMessage: err.message });
     }
@@ -48,13 +44,13 @@ class VotingNew extends Component {
   handleEndDateChange(date) {
     const selectedDate = date;
     const currentDate = new Date();
-  
+
     if (new Date(selectedDate) < currentDate) {
-      alert("You cannot select a date before today");
+      alert('You cannot select a date before today');
       return;
     }
-    this.setState({ endDate: selectedDate }); 
-  };
+    this.setState({ endDate: selectedDate });
+  }
 
   render() {
     return (
@@ -64,27 +60,10 @@ class VotingNew extends Component {
         <Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
           <Form.Field>
             <label>Number Of Choice</label>
-            <Input
-              label="number"
-              labelPosition="right"
-              value={this.state.numberOfChoice}
-              onChange={(event) =>
-                this.setState({ numberOfChoice: event.target.value })
-              }
-            />
+            <Input label="number" labelPosition="right" value={this.state.numberOfChoice} onChange={(event) => this.setState({ numberOfChoice: event.target.value })} />
 
             <label>End Date of Voting</label>
             <DatePicker value={this.state.endDate} selected={this.state.endDate} onChange={(event) => this.handleEndDateChange(event)} showTimeSelect dateFormat="Pp" />
-
-            <label>Fill Your Voting Balance (0.021 Minimum)</label>
-            <Input
-              label="ether"
-              labelPosition="right"
-              value={this.state.votingFee}
-              onChange={(event) =>
-                this.setState({ votingFee: event.target.value })
-              }
-            />
           </Form.Field>
 
           <Button loading={this.state.loading} primary>
@@ -92,9 +71,7 @@ class VotingNew extends Component {
           </Button>
 
           <Message error header="Oops!" content={this.state.errorMessage} />
-          {this.state.successMessage && (
-          <Message positive header="Success!" content="Voting Created!" />
-          )}
+          {this.state.successMessage && <Message positive header="Success!" content="Voting Created!" />}
         </Form>
       </Layout>
     );

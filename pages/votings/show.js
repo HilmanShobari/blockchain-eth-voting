@@ -1,11 +1,11 @@
-import React from "react";
-import Layout from "../../components/Layout";
-import Voting from "../../ethereum/voting";
-import web3 from "../../ethereum/web3";
-import { Form, Radio, Message, Button, Card, Grid } from "semantic-ui-react";
-import { Router } from "../../routes";
-import AddAllowedVotersForm from "../../components/AddAllowedVotersForm";
-import CompletedVoteForm from "../../components/CompletedVoteForm";
+import React from 'react';
+import Layout from '../../components/Layout';
+import Voting from '../../ethereum/voting';
+import web3 from '../../ethereum/web3';
+import { Form, Radio, Message, Button, Card, Grid } from 'semantic-ui-react';
+import { Router } from '../../routes';
+import AddAllowedVotersForm from '../../components/AddAllowedVotersForm';
+import CompletedVoteForm from '../../components/CompletedVoteForm';
 
 class VotingShow extends React.Component {
   static async getInitialProps(props) {
@@ -27,15 +27,8 @@ class VotingShow extends React.Component {
 
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp * 1000);
-      const formattedDate = `${date.getDate()}-${
-        date.getMonth() + 1
-      }-${date.getFullYear()}`;
-      const formattedTime = `${String(date.getHours()).padStart(
-        2,
-        "0"
-      )}:${String(date.getMinutes()).padStart(2, "0")}:${String(
-        date.getSeconds()
-      ).padStart(2, "0")}`;
+      const formattedDate = `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+      const formattedTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
 
       return `Tanggal: ${formattedDate}, ${formattedTime}`;
     }
@@ -50,18 +43,14 @@ class VotingShow extends React.Component {
       fromDate: formatTimestamp(contractDetail[2]),
       endDate: formatTimestamp(contractDetail[3]),
       completed: contractDetail[4],
-      luckyVoter:
-        contractDetail[5] != "0x0000000000000000000000000000000000000000"
-          ? contractDetail[5]
-          : null,
+      luckyVoter: contractDetail[5] != '0x0000000000000000000000000000000000000000' ? contractDetail[5] : null,
       totalVotersVoted: contractDetail[6],
-      reward: web3.utils.fromWei(contractDetail[7], "ether"),
     };
   }
 
   state = {
     value: null,
-    errorMessage: "",
+    errorMessage: '',
     successMessage: false,
     loading: false,
   };
@@ -70,16 +59,14 @@ class VotingShow extends React.Component {
     event.preventDefault();
     this.setState({
       loading: true,
-      errorMessage: "",
+      errorMessage: '',
       successMessage: false,
     });
 
     try {
       const accounts = await web3.eth.getAccounts();
       const voting = Voting(this.props.address);
-      await voting.methods
-        .pickChoice(this.state.value)
-        .send({ from: accounts[0] });
+      await voting.methods.pickChoice(this.state.value).send({ from: accounts[0] });
       this.setState({ successMessage: true });
       Router.pushRoute(`/votings/${this.props.address}`);
     } catch (err) {
@@ -90,7 +77,7 @@ class VotingShow extends React.Component {
   onChoiceChange = (event, { value }) => {
     this.setState({
       value: value,
-      errorMessage: "",
+      errorMessage: '',
       successMessage: false,
       loading: false,
     });
@@ -102,39 +89,18 @@ class VotingShow extends React.Component {
         <Card key={index}>
           <Card.Content>
             <Card.Header>{this.props.descriptions[index]}</Card.Header>
-            <Card.Meta>
-              Received votes: {this.props.receivedVotes[index]}
-            </Card.Meta>
-            <Form
-              onSubmit={this.onSubmitVoting}
-              error={!!this.state.errorMessage}
-            >
+            <Card.Meta>Received votes: {this.props.receivedVotes[index]}</Card.Meta>
+            <Form onSubmit={this.onSubmitVoting} error={!!this.state.errorMessage}>
               <Form.Field>
-                <Radio
-                  label="Pick this choice"
-                  name="radioGroup"
-                  value={index}
-                  checked={this.state.value === index}
-                  onChange={this.onChoiceChange}
-                />
+                <Radio label="Pick this choice" name="radioGroup" value={index} checked={this.state.value === index} onChange={this.onChoiceChange} />
               </Form.Field>
               {this.state.value === index && (
                 <>
                   <Button floated="right" loading={this.state.loading} primary>
                     Choose!
                   </Button>
-                  <Message
-                    error
-                    header="Oops!"
-                    content={this.state.errorMessage}
-                  />
-                  {this.state.successMessage && (
-                    <Message
-                      positive
-                      header="Success!"
-                      content="Vote Successful!!"
-                    />
-                  )}
+                  <Message error header="Oops!" content={this.state.errorMessage} />
+                  {this.state.successMessage && <Message positive header="Success!" content="Vote Successful!!" />}
                 </>
               )}
             </Form>
@@ -150,27 +116,16 @@ class VotingShow extends React.Component {
         <Grid>
           <Grid.Row>
             <Grid.Column width={10}>
-              <h3 style={{ marginBottom: "10px" }}>Choose to Vote!</h3>
+              <h3 style={{ marginBottom: '10px' }}>Choose to Vote!</h3>
             </Grid.Column>
             <Grid.Column width={6}>
               <AddAllowedVotersForm address={this.props.address} />
             </Grid.Column>
-            <Grid.Column width={10}>
-              Voting Manager: {this.props.manager}
-            </Grid.Column>
-            <Grid.Column width={10}>
-              Total Choices: {this.props.totalChoices}
-            </Grid.Column>
-            <Grid.Column width={10}>
-              From Date: {this.props.fromDate}
-            </Grid.Column>
+            <Grid.Column width={10}>Voting Manager: {this.props.manager}</Grid.Column>
+            <Grid.Column width={10}>Total Choices: {this.props.totalChoices}</Grid.Column>
+            <Grid.Column width={10}>From Date: {this.props.fromDate}</Grid.Column>
             <Grid.Column width={10}>End Date: {this.props.endDate}</Grid.Column>
-            <Grid.Column width={10}>
-              Total Voters: {this.props.totalVotersVoted}
-            </Grid.Column>
-            <Grid.Column width={10}>
-              <h3>Reward: {this.props.reward} ether!</h3>
-            </Grid.Column>
+            <Grid.Column width={10}>Total Voters: {this.props.totalVotersVoted}</Grid.Column>
           </Grid.Row>
 
           <Grid.Row>

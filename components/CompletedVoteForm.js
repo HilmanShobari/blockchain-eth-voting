@@ -54,10 +54,6 @@ class CompletedVoteForm extends React.Component {
         onSubmit={this.completedVote}
         error={!!this.state.errorMessageCompletedVote}
       >
-        <Button loading={this.state.loadingCompletedVote} primary>
-          Pick Random Lucky Voter And Send Reward!
-        </Button>
-
         <Message
           error
           header="Oops!"
