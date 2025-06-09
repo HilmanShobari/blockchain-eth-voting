@@ -22,14 +22,14 @@ class CompletedVoteForm extends React.Component {
     try {
       const accounts = await web3.eth.getAccounts();
       const voting = Voting(this.props.address);
-      await voting.methods.completedVoteThenTransfer().send({
+      await voting.methods.complete().send({
         from: accounts[0],
       });
 
-      const luckyVoter = await voting.methods.luckyVoter().call();
-      if (luckyVoter == "0x0000000000000000000000000000000000000000") {
+      const completed = await voting.methods.completed().call();
+      if (!completed) {
         this.setState({
-          errorMessageCompletedVote: "No Winner! End Date Plus 1 Day",
+          errorMessageCompletedVote: "Voting completion failed",
           loadingCompletedVote: false,
         });
       } else {
@@ -54,6 +54,9 @@ class CompletedVoteForm extends React.Component {
         onSubmit={this.completedVote}
         error={!!this.state.errorMessageCompletedVote}
       >
+        <Button loading={this.state.loadingCompletedVote} primary>
+          Complete Vote
+        </Button>
         <Message
           error
           header="Oops!"
@@ -63,7 +66,7 @@ class CompletedVoteForm extends React.Component {
           <Message
             positive
             header="Success!"
-            content="Prize has been sent to Lucky Voter!"
+            content="Vote completed successfully!"
           />
         )}
       </Form>

@@ -1,11 +1,12 @@
+require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const Web3 = require('web3');
 const compiledFactory = require('./build/VotingFactory.json');
 
 const provider = new HDWalletProvider(
-  'enroll refuse language prepare error exit loop sleep borrow animal idea nominee',
+  process.env.NEXT_PUBLIC_MNEMONIC_PHRASE,
   // remember to change this to your own phrase!
-  'https://still-broken-hill.matic-amoy.quiknode.pro/8709bf5eb7f5a10aa1d549e0b3e378d5b9372a96'
+  process.env.NEXT_PUBLIC_RPC
   // remember to change this to your own endpoint!
 );
 const web3 = new Web3(provider);

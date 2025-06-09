@@ -10,19 +10,14 @@ import CompletedVoteForm from '../../components/CompletedVoteForm';
 class VotingShow extends React.Component {
   static async getInitialProps(props) {
     const voting = Voting(props.query.address);
-    const votingCount = await voting.methods.getVotingCount().call();
-    const winner = await voting.methods.winner().call();
-    const contractDetail = await voting.methods.getContractDetail().call();
+    const contractDetail = await voting.methods.getStatus().call();
 
-    let descriptions = [];
-    let receivedVotes = [];
+    let choiceVotes = [];
+    const totalChoices = contractDetail[1];
 
-    for (let i = 0; i < votingCount; i++) {
-      const choice = await voting.methods.getStructDetail(i).call();
-      const description = choice[0];
-      const receivedVote = choice[1];
-      descriptions.push(description);
-      receivedVotes.push(receivedVote);
+    for (let i = 0; i < totalChoices; i++) {
+      const votes = await voting.methods.getVotes(i).call();
+      choiceVotes.push(votes);
     }
 
     function formatTimestamp(timestamp) {
@@ -35,16 +30,13 @@ class VotingShow extends React.Component {
 
     return {
       address: props.query.address,
-      descriptions,
-      receivedVotes,
-      winner: winner,
+      choiceVotes,
       manager: contractDetail[0],
       totalChoices: contractDetail[1],
       fromDate: formatTimestamp(contractDetail[2]),
       endDate: formatTimestamp(contractDetail[3]),
       completed: contractDetail[4],
-      luckyVoter: contractDetail[5] != '0x0000000000000000000000000000000000000000' ? contractDetail[5] : null,
-      totalVotersVoted: contractDetail[6],
+      totalVotersVoted: contractDetail[5],
     };
   }
 
@@ -66,7 +58,7 @@ class VotingShow extends React.Component {
     try {
       const accounts = await web3.eth.getAccounts();
       const voting = Voting(this.props.address);
-      await voting.methods.pickChoice(this.state.value).send({ from: accounts[0] });
+      await voting.methods.vote(this.state.value).send({ from: accounts[0] });
       this.setState({ successMessage: true });
       Router.pushRoute(`/votings/${this.props.address}`);
     } catch (err) {
@@ -84,17 +76,18 @@ class VotingShow extends React.Component {
   };
 
   renderChoices() {
-    return this.props.descriptions.map((result, index) => {
-      return (
-        <Card key={index}>
+    const choices = [];
+    for (let i = 0; i < this.props.totalChoices; i++) {
+      choices.push(
+        <Card key={i}>
           <Card.Content>
-            <Card.Header>{this.props.descriptions[index]}</Card.Header>
-            <Card.Meta>Received votes: {this.props.receivedVotes[index]}</Card.Meta>
+            <Card.Header>Pilihan {i + 1}</Card.Header>
+            <Card.Meta>Received votes: {this.props.choiceVotes[i]}</Card.Meta>
             <Form onSubmit={this.onSubmitVoting} error={!!this.state.errorMessage}>
               <Form.Field>
-                <Radio label="Pick this choice" name="radioGroup" value={index} checked={this.state.value === index} onChange={this.onChoiceChange} />
+                <Radio label="Pick this choice" name="radioGroup" value={i} checked={this.state.value === i} onChange={this.onChoiceChange} />
               </Form.Field>
-              {this.state.value === index && (
+              {this.state.value === i && (
                 <>
                   <Button floated="right" loading={this.state.loading} primary>
                     Choose!
@@ -107,7 +100,8 @@ class VotingShow extends React.Component {
           </Card.Content>
         </Card>
       );
-    });
+    }
+    return choices;
   }
 
   render() {
@@ -130,11 +124,6 @@ class VotingShow extends React.Component {
 
           <Grid.Row>
             <Grid.Column width={10}>{this.renderChoices()}</Grid.Column>
-            <Grid.Column width={6}>
-              <CompletedVoteForm address={this.props.address} />
-              <h3>Lucky Voter: {this.props.luckyVoter}</h3>
-              <h3>Choice Winner: {this.props.winner}</h3>
-            </Grid.Column>
           </Grid.Row>
         </Grid>
       </Layout>

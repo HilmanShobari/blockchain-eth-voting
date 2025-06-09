@@ -3,171 +3,105 @@
 pragma solidity ^0.8.9;
 
 contract VotingFactory {
-    address payable[] public deployedVotings;
-    address public creator;
+    address[] public deployedVotings;
 
-    constructor() {
-        creator = msg.sender;
-    }
-
-    function createVoting(uint choices, uint fromDate, uint endDate) public {
-        address newVoting = address(
-            new Voting(choices, fromDate, endDate, msg.sender)
+    function createVoting(
+        uint8 choices,
+        uint32 fromDate,
+        uint32 endDate
+    ) external {
+        deployedVotings.push(
+            address(new Voting(choices, fromDate, endDate, msg.sender))
         );
-        deployedVotings.push(payable(newVoting));
     }
 
-    function getDeployedVotings()
-        public
-        view
-        returns (address payable[] memory)
-    {
+    function getDeployedVotings() external view returns (address[] memory) {
         return deployedVotings;
     }
 }
 
 contract Voting {
+    // Storage slot 1: address (20 bytes) + uint8 (1 byte) + bool (1 byte) = 22 bytes (fits in 32)
     address public manager;
-    string public winner;
-
-    uint public totalChoices;
-    uint public fromDate;
-    uint public endDate;
-
+    uint8 public totalChoices;
     bool public completed;
 
+    // Storage slot 2: uint32 (4 bytes) + uint32 (4 bytes) + uint32 (4 bytes) + uint32 (4 bytes) = 16 bytes (fits in 32)
+    uint32 public fromDate;
+    uint32 public endDate;
+    uint32 public totalVotersVoted;
+    uint32 public totalAllowedVoters;
+
+    // Mappings (each entry uses 1 storage slot)
     mapping(address => bool) public votedVoters;
-    uint public totalVotersVoted;
-
     mapping(address => bool) public allowedVoters;
-    uint public totalAllowedVoters;
+    mapping(uint8 => uint32) public choiceVotes;
 
-    choicesData[] public choicesDatas;
+    // Events for logging (cheaper than storage)
+    event VoterAdded(address voter);
+    event VoteCast(address voter, uint8 choice);
+    event VotingCompleted();
 
-    struct choicesData {
-        string description;
-        uint receivedVotes;
-        address payable[] voters;
-    }
-
-    modifier restricted() {
-        require(msg.sender == manager);
+    modifier onlyManager() {
+        require(msg.sender == manager, "Not manager");
         _;
     }
 
     constructor(
-        uint totalChoicesInput,
-        uint fromDateInput,
-        uint endDateInput,
-        address creator
+        uint8 _totalChoices,
+        uint32 _fromDate,
+        uint32 _endDate,
+        address _manager
     ) {
-        manager = creator;
-        totalChoices = totalChoicesInput;
-        fromDate = fromDateInput;
-        endDate = endDateInput;
+        manager = _manager;
+        totalChoices = _totalChoices;
+        fromDate = _fromDate;
+        endDate = _endDate;
+        // Other variables default to 0/false (saves gas)
+    }
 
-        for (uint i = 1; i <= totalChoices; i++) {
-            choicesData storage choicesdata = choicesDatas.push();
-            choicesdata.description = string(
-                abi.encodePacked("Pilihan ", _uint2str(i))
-            );
-            choicesdata.receivedVotes = 0;
-            choicesdata.voters = new address payable[](0);
+    function addVoter(address voter) external onlyManager {
+        require(!allowedVoters[voter], "Already added");
+        allowedVoters[voter] = true;
+        unchecked {
+            totalAllowedVoters++;
         }
+        emit VoterAdded(voter);
     }
 
-    function addAllowerdVoters(address newAllowerdVoters) public restricted {
-        require(newAllowerdVoters != manager, "Manager Cannot Be Voters");
+    function vote(uint8 choice) external {
+        require(allowedVoters[msg.sender], "Not allowed");
+        require(!votedVoters[msg.sender], "Already voted");
+        require(!completed, "Completed");
         require(
-            !allowedVoters[newAllowerdVoters],
-            "This Address is Already a Voter "
+            block.timestamp >= fromDate && block.timestamp <= endDate,
+            "Invalid time"
         );
+        require(choice < totalChoices, "Invalid choice");
 
-        allowedVoters[newAllowerdVoters] = true;
-        totalAllowedVoters++;
-    }
-
-    function pickChoice(uint index) public {
-        require(msg.sender != manager, "Manager Can Not Vote");
-        require(allowedVoters[msg.sender], "You Cannot Take Part in This Vote");
-        require(!votedVoters[msg.sender], "You Can Only Vote Once");
-        require(!completed, "Voting Has Ended");
-        require(
-            block.timestamp > fromDate && block.timestamp < endDate,
-            "You Chose at The Wrong Time"
-        );
-
-        choicesData storage choicesdata = choicesDatas[index];
-        choicesdata.receivedVotes++;
-        choicesdata.voters.push(payable(msg.sender));
         votedVoters[msg.sender] = true;
-        totalVotersVoted++;
-    }
-
-    function completedVoteThenTransfer() public restricted {
-        // require(block.timestamp > endDate, "Voting Time Is Not Over"); /*uncomment this if you need validation endDate to pick Random Voter*/
-        require(!completed, "Voting Has Ended");
-
-        if (_getWinnerIndices().length > 1) {
-            endDate = endDate + 1 days;
-        } else {
-            choicesData storage winnerChoice = choicesDatas[
-                _getWinnerIndices()[0]
-            ];
-            winner = winnerChoice.description;
-            completed = true;
+        unchecked {
+            choiceVotes[choice]++;
+            totalVotersVoted++;
         }
+        emit VoteCast(msg.sender, choice);
     }
 
-    function _getWinnerIndices()
-        internal
+    function complete() external onlyManager {
+        require(!completed, "Already completed");
+        require(block.timestamp > endDate, "Not ended");
+        completed = true;
+        emit VotingCompleted();
+    }
+
+    function getVotes(uint8 choice) external view returns (uint32) {
+        return choiceVotes[choice];
+    }
+
+    function getStatus()
+        external
         view
-        restricted
-        returns (uint[] memory)
-    {
-        uint maxVotes = 0;
-        uint[] memory winnerIndices;
-        uint count = 0;
-
-        for (uint i = 0; i < choicesDatas.length; i++) {
-            if (choicesDatas[i].receivedVotes > maxVotes) {
-                maxVotes = choicesDatas[i].receivedVotes;
-                count = 1;
-                winnerIndices = new uint[](count);
-                winnerIndices[0] = i;
-            } else if (choicesDatas[i].receivedVotes == maxVotes) {
-                count++;
-                uint[] memory newWinnerIndices = new uint[](count);
-                for (uint j = 0; j < count - 1; j++) {
-                    newWinnerIndices[j] = winnerIndices[j];
-                }
-                newWinnerIndices[count - 1] = i;
-                winnerIndices = newWinnerIndices;
-            }
-        }
-
-        return winnerIndices; /*return 1 or more winner*/
-    }
-
-    function getStructDetail(
-        uint index
-    ) public view returns (string memory, uint, address payable[] memory) {
-        choicesData storage choicedata = choicesDatas[index];
-        return (
-            choicedata.description,
-            choicedata.receivedVotes,
-            choicedata.voters
-        );
-    }
-
-    function getVotingCount() public view returns (uint) {
-        return choicesDatas.length;
-    }
-
-    function getContractDetail()
-        public
-        view
-        returns (address, uint, uint, uint, bool, uint)
+        returns (address, uint8, uint32, uint32, bool, uint32)
     {
         return (
             manager,
@@ -177,28 +111,5 @@ contract Voting {
             completed,
             totalVotersVoted
         );
-    }
-
-    function _uint2str(uint _i) internal pure returns (string memory str) {
-        /* change uint to string */
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint length;
-        while (j != 0) {
-            length++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(length);
-        uint k = length;
-        while (_i != 0) {
-            k = k - 1;
-            uint8 temp = uint8(48 + (_i % 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        str = string(bstr);
     }
 }

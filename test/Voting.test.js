@@ -18,22 +18,23 @@ beforeEach(async () => {
     .deploy({ data: compiledFactory.evm.bytecode.object })
     .send({ from: accounts[0], gas: "3000000" });
 
-  // const value = web3.utils.toWei('0.02', 'ether');
+  // Create timestamps for voting period
+  const startTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
+  const endTime = Math.floor(Date.now() / 1000) - 60; // 1 minute ago (already ended)
 
-  await factory.methods.createVoting("2", "1684223786", "1684337856").send({
+  await factory.methods.createVoting(2, startTime, endTime).send({
     from: accounts[0],
-    gas: "1800000",
-    value: "2100000000000000000"
+    gas: "3000000"
   });
 
   [votingAddress] = await factory.methods.getDeployedVotings().call();
-    voting = await new web3.eth.Contract(
+  voting = await new web3.eth.Contract(
     compiledVoting.abi,
     votingAddress
   );
 });
 
-describe("Voting", () => {
+describe("Optimized Voting", () => {
   it("deploys a factory and a voting", () => {
     assert.ok(factory.options.address);
     assert.ok(voting.options.address);
@@ -44,38 +45,29 @@ describe("Voting", () => {
     assert.equal(accounts[0], manager);
   });
 
-
-  it("completed vote", async () => {
-    await voting.methods.pickChoice(0).send({
-      from: accounts[1],
-      gas: "1000000"
+  it("allows manager to add voters", async () => {
+    await voting.methods.addVoter(accounts[1]).send({
+      from: accounts[0],
+      gas: "100000"
     });
     
-    totalVoters = await voting.methods.totalVoters().call();
-    
-    await voting.methods.completedVoteThenTransfer().send({
-      from: accounts[0],
-      gas: "1400000"
-    })
-    
-    luckyVoter = await voting.methods.luckyVoter().call();
-
-    let votingAddress = voting.options.address;
-    let balanceContract = await web3.eth.getBalance(votingAddress);
-    balanceContract = web3.utils.fromWei(balanceContract, "ether");
-    balanceContract = parseFloat(balanceContract);
-
-    console.log(totalVoters);
-    console.log(accounts[1]);
-    console.log(luckyVoter);
-    console.log(balanceContract);
-    let balance = await web3.eth.getBalance(accounts[1]);
-    balance = web3.utils.fromWei(balance, "ether");
-    balance = parseFloat(balance);
-    console.log(balance);
-    
-    assert(totalVoters > 0);
+    const isAllowed = await voting.methods.allowedVoters(accounts[1]).call();
+    assert(isAllowed);
   });
 
+  it("can complete vote after voting period ends", async () => {
+    const totalVoters = await voting.methods.totalVotersVoted().call();
+    
+    await voting.methods.complete().send({
+      from: accounts[0],
+      gas: "100000"
+    });
+    
+    const completed = await voting.methods.completed().call();
 
+    console.log("Total voters:", totalVoters);
+    console.log("Completed:", completed);
+    
+    assert(completed);
+  });
 });

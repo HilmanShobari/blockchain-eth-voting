@@ -1,5 +1,6 @@
 import Web3 from "web3";
- 
+require('dotenv').config();
+
 let web3;
  
 if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
@@ -9,7 +10,7 @@ if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
 } else {
   // We are on the server *OR* the user is not running metamask
   const provider = new Web3.providers.HttpProvider(
-    "https://still-broken-hill.matic-amoy.quiknode.pro/8709bf5eb7f5a10aa1d549e0b3e378d5b9372a96"
+    process.env.NEXT_PUBLIC_RPC
   );
   web3 = new Web3(provider);
 }
