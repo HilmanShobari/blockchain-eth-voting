@@ -11,6 +11,7 @@ class VotingIndex extends React.Component {
     return { votings };
   }
 
+  // buat fungsi baru untuk handle ketika klik button akan merubah background
   renderCampaigns() {
     const items = this.props.votings.map((address) => {
       return {

@@ -9,8 +9,7 @@ if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
 } else {
   // We are on the server *OR* the user is not running metamask
   const provider = new Web3.providers.HttpProvider(
-    // "https://sepolia.infura.io/v3/e66c6786fc4e4498b85dad63f994340c"
-    "https://polygon-mumbai.g.alchemy.com/v2/vcvZrzGeIs5WzICRvEj3IqaKiVrINq96"
+    "https://still-broken-hill.matic-amoy.quiknode.pro/8709bf5eb7f5a10aa1d549e0b3e378d5b9372a96"
   );
   web3 = new Web3(provider);
 }
