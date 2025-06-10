@@ -4,6 +4,7 @@ import factory from '../ethereum/factory';
 import Voting from '../ethereum/voting';
 import provider from '../ethereum/ethers';
 import { getSaferSigner, checkMetaMaskStatus } from '../utils/ethersHelper';
+import ErrorModal from '../components/ErrorModal';
 import Layout from '../components/Layout';
 import Link from 'next/link';
 import AddAllowedVotersForm from '../components/AddAllowedVotersForm';
@@ -16,6 +17,8 @@ const ManagerPage = () => {
   const [currentAccount, setCurrentAccount] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorDetails, setErrorDetails] = useState('');
 
 
   useEffect(() => {
@@ -99,6 +102,8 @@ const ManagerPage = () => {
       } catch (error) {
         console.error('Error fetching votings:', error);
         setError(error.message);
+        setErrorDetails(error.stack || JSON.stringify(error));
+        setShowErrorModal(true);
       } finally {
         setLoading(false);
       }
@@ -246,6 +251,15 @@ const ManagerPage = () => {
           )}
         </Segment>
       </Container>
+      
+      {/* Error Modal */}
+      <ErrorModal
+        open={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Connection Error"
+        message={error}
+        details={errorDetails}
+      />
     </Layout>
   );
 };

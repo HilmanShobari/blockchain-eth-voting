@@ -8,6 +8,7 @@ import AddAllowedVotersForm from '../../components/AddAllowedVotersForm';
 import CompletedVoteForm from '../../components/CompletedVoteForm';
 import withLoading from '../../components/withLoading';
 import LoadingPage from '../../components/LoadingPage';
+import ErrorModal from '../../components/ErrorModal';
 
 const VotingShow = ({ address }) => {
   const router = useRouter();
@@ -30,15 +31,25 @@ const VotingShow = ({ address }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorDetails, setErrorDetails] = useState('');
 
   useEffect(() => {
     const fetchVotingData = async () => {
       try {
         setLoading(true);
+        
+        // Wait for router to be ready on client-side
+        if (!router.isReady) {
+          setLoading(false);
+          return;
+        }
+        
         const votingAddress = address || router.query.address;
         
         if (!votingAddress) {
-          setError('No voting address provided');
+          console.log('Router query:', router.query);
+          setError('Voting address not found in URL');
           return;
         }
 
@@ -100,7 +111,7 @@ const VotingShow = ({ address }) => {
     };
 
     fetchVotingData();
-  }, [address]);
+  }, [address, router.isReady, router.query.address]);
 
   const onSubmitVoting = async (event) => {
     event.preventDefault();
@@ -112,11 +123,27 @@ const VotingShow = ({ address }) => {
       const signer = await provider.getSigner();
       const voting = Voting(votingData.address);
       const votingWithSigner = voting.connect(signer);
-      await votingWithSigner.vote(value);
+      
+      console.log('Submitting vote...');
+      const transaction = await votingWithSigner.vote(value);
+      console.log('Transaction sent:', transaction.hash);
+      
+      console.log('Waiting for confirmation...');
+      const receipt = await transaction.wait();
+      console.log('Transaction confirmed:', receipt);
+      
       setSuccessMessage(true);
-      router.push(`/votings/${votingData.address}`);
+      
+      // Refresh voting data after successful vote
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
     } catch (err) {
+      console.error('Voting error:', err);
       setErrorMessage(err.message);
+      setErrorDetails(err.stack || JSON.stringify(err));
+      setShowErrorModal(true);
     }
 
     setSubmitting(false);
@@ -217,9 +244,7 @@ const VotingShow = ({ address }) => {
                   </div>
                 </Form.Field>
                 
-                {value === i && errorMessage && (
-                  <Message error header="Error!" content={errorMessage} style={{ marginTop: '10px' }} />
-                )}
+             
                 {value === i && successMessage && (
                   <Message positive header="Success!" content="Vote cast successfully!" style={{ marginTop: '10px' }} />
                 )}
@@ -359,6 +384,15 @@ const VotingShow = ({ address }) => {
           </Grid.Row>
         </Grid>
       </Container>
+      
+      {/* Error Modal */}
+      <ErrorModal
+        open={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Transaction Error"
+        message={errorMessage}
+        details={errorDetails}
+      />
     </Layout>
   );
 };

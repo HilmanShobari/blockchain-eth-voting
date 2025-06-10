@@ -23,12 +23,22 @@ const AddAllowedVotersForm = ({ address }) => {
       const voting = Voting(address);
       const votingWithSigner = voting.connect(signer);
 
-      await votingWithSigner.addVoter(value);
+      console.log('Adding voter...');
+      const transaction = await votingWithSigner.addVoter(value);
+      console.log('Transaction sent:', transaction.hash);
+      
+      console.log('Waiting for confirmation...');
+      await transaction.wait();
+      console.log('Transaction confirmed');
 
       setSuccessMessage(true);
       setLoading(false);
       setValue("");
-      router.push(`/votings/${address}`);
+      
+      // Refresh page after successful transaction
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err) {
       setErrorMessage(err.message);
       setSuccessMessage(false);

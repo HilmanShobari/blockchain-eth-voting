@@ -20,7 +20,13 @@ const CompletedVoteForm = ({ address }) => {
       const signer = await provider.getSigner();
       const voting = Voting(address);
       const votingWithSigner = voting.connect(signer);
-      await votingWithSigner.complete();
+      console.log('Completing vote...');
+      const transaction = await votingWithSigner.complete();
+      console.log('Transaction sent:', transaction.hash);
+      
+      console.log('Waiting for confirmation...');
+      await transaction.wait();
+      console.log('Transaction confirmed');
 
       const completed = await voting.completed();
       if (!completed) {
@@ -30,7 +36,11 @@ const CompletedVoteForm = ({ address }) => {
         setSuccessMessageCompletedVote(true);
         setLoadingCompletedVote(false);
       }
-      router.push(`/votings/${address}`);
+      
+      // Refresh page after successful transaction
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err) {
       setErrorMessageCompletedVote(err.message);
       setSuccessMessageCompletedVote(false);

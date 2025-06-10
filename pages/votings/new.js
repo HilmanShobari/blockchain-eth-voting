@@ -55,12 +55,19 @@ const VotingNew = () => {
       console.log('Getting signer for transaction...');
       const signer = await provider.getSigner();
       const factoryWithSigner = factory.connect(signer);
-      await factoryWithSigner.createVoting(
+      
+      console.log('Creating voting...');
+      const transaction = await factoryWithSigner.createVoting(
         title.trim(),
         validChoices,
         startDateTimestamp, 
         endDateTimestamp
       );
+      console.log('Transaction sent:', transaction.hash);
+      
+      console.log('Waiting for confirmation...');
+      await transaction.wait();
+      console.log('Voting created successfully');
 
       router.push('/manager');
     } catch (err) {
