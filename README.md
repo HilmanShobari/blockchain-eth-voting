@@ -28,8 +28,10 @@ NEXT_PUBLIC_RPC=your_rpc_endpoint_url
 ### 2. Installation
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
+
+**Note**: We use `--legacy-peer-deps` due to compatibility with Next.js and Web3.js v4.
 
 ### 3. Smart Contract
 
@@ -64,6 +66,31 @@ Access the application at http://localhost:3000
 - Manage allowed voters for your campaigns
 - Monitor voting progress and results
 
+## Technology Stack
+
+- **Frontend**: Next.js 13.x, React 18, Semantic UI React
+- **Blockchain**: Web3.js v4.16.0, Ethereum
+- **Smart Contracts**: Solidity 0.8.18
+- **Development**: Node.js, npm
+
+## Web3.js v4 Migration
+
+This project has been updated to use **Web3.js v4.16.0** with the following key changes:
+
+### Key Updates
+
+- ✅ Import syntax: `import { Web3 } from "web3"`
+- ✅ Simplified provider initialization
+- ✅ Enhanced TypeScript support
+- ✅ Better performance and tree-shaking
+- ✅ Native BigInt support
+
+### Breaking Changes Fixed
+
+1. **Import Statement**: Changed from `import Web3 from "web3"` to `import { Web3 } from "web3"`
+2. **Provider Initialization**: Direct RPC URL instead of explicit HttpProvider
+3. **Enhanced Error Handling**: Better error messages and debugging
+
 ## Troubleshooting
 
 If you see "Connection Error":
@@ -72,3 +99,9 @@ If you see "Connection Error":
 2. Check your `.env` configuration
 3. Verify the contract address is correct
 4. Make sure you're on the correct network
+
+### Web3.js v4 Specific Issues
+
+- If you encounter dependency conflicts, use `npm install --legacy-peer-deps`
+- Make sure your RPC endpoint supports the latest JSON-RPC specifications
+- For TypeScript projects, Web3.js v4 provides better type safety

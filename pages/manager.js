@@ -4,7 +4,7 @@ import factory from '../ethereum/factory';
 import Voting from '../ethereum/voting';
 import web3 from '../ethereum/web3';
 import Layout from '../components/Layout';
-import { Link } from '../routes';
+import Link from 'next/link';
 import AddAllowedVotersForm from '../components/AddAllowedVotersForm';
 import CompletedVoteForm from '../components/CompletedVoteForm';
 import withLoading from '../components/withLoading';
@@ -46,11 +46,11 @@ const ManagerPage = () => {
             console.log('Contract detail:', contractDetail);
 
             const manager = contractDetail[0];
-            const totalChoices = contractDetail[1];
-            const fromDate = contractDetail[2];
-            const endDate = contractDetail[3];
+            const totalChoices = Number(contractDetail[1]); // Convert BigInt to Number
+            const fromDate = Number(contractDetail[2]); // Convert BigInt to Number
+            const endDate = Number(contractDetail[3]); // Convert BigInt to Number
             const completed = contractDetail[4];
-            const totalVotersVoted = contractDetail[5];
+            const totalVotersVoted = Number(contractDetail[5]); // Convert BigInt to Number
             const title = contractDetail[6] || `Voting ${address.slice(0, 6)}...`;
 
             console.log('Manager:', manager, 'Current:', account);
@@ -124,7 +124,7 @@ const ManagerPage = () => {
             </Card.Meta>
             <Card.Description style={{ marginTop: '15px' }}>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <Link route={`/votings/${voting.address}`}>
+                <Link href={`/votings/${voting.address}`}>
                   <Button size="small" color="blue" icon labelPosition="left">
                     <Icon name="eye" />
                     View Details
@@ -187,7 +187,7 @@ const ManagerPage = () => {
           </Header>
           <p style={{ fontSize: '1.1em', opacity: '0.9' }}>Create and manage your voting campaigns</p>
 
-          <Link route="/votings/new">
+          <Link href="/votings/new">
             <Button
               size="large"
               style={{

@@ -3,7 +3,7 @@ import { Card, Container, Header, Segment, Icon, Label, Button } from 'semantic-
 import factory from '../ethereum/factory';
 import Voting from '../ethereum/voting';
 import Layout from '../components/Layout';
-import { Link } from '../routes';
+import Link from 'next/link';
 import withLoading from '../components/withLoading';
 import LoadingPage from '../components/LoadingPage';
 
@@ -30,11 +30,11 @@ const VotingIndex = () => {
             console.log('Contract detail:', contractDetail);
 
             const manager = contractDetail[0];
-            const totalChoices = contractDetail[1];
-            const fromDate = contractDetail[2];
-            const endDate = contractDetail[3];
+            const totalChoices = Number(contractDetail[1]); // Convert BigInt to Number
+            const fromDate = Number(contractDetail[2]); // Convert BigInt to Number
+            const endDate = Number(contractDetail[3]); // Convert BigInt to Number
             const completed = contractDetail[4];
-            const totalVotersVoted = contractDetail[5];
+            const totalVotersVoted = Number(contractDetail[5]); // Convert BigInt to Number
             const title = contractDetail[6] || `Voting ${address.slice(0, 6)}...`;
 
             function formatTimestamp(timestamp) {
@@ -123,7 +123,7 @@ const VotingIndex = () => {
             </Card.Meta>
 
             <Card.Description style={{ textAlign: 'center' }}>
-              <Link route={`/votings/${voting.address}`}>
+              <Link href={`/votings/${voting.address}`}>
                 <Button
                   size="large"
                   style={{

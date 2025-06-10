@@ -3,13 +3,14 @@ import Layout from '../../components/Layout';
 import { Button, Form, Input, Message, Container, Header, Segment, Icon, Label } from 'semantic-ui-react';
 import factory from '../../ethereum/factory';
 import web3 from '../../ethereum/web3';
-import { Router } from '../../routes';
+import { useRouter } from 'next/router';
 import DatePicker from 'react-datepicker';
 import withLoading from '../../components/withLoading';
 
 import 'react-datepicker/dist/react-datepicker.css';
 
 const VotingNew = () => {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [choices, setChoices] = useState(['', '']);
   const [endDate, setEndDate] = useState('');
@@ -52,7 +53,7 @@ const VotingNew = () => {
         from: accounts[0],
       });
 
-      Router.pushRoute('/manager');
+      router.push('/manager');
     } catch (err) {
       setErrorMessage(err.message);
     }

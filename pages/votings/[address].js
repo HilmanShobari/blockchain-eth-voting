@@ -3,13 +3,14 @@ import Layout from '../../components/Layout';
 import Voting from '../../ethereum/voting';
 import web3 from '../../ethereum/web3';
 import { Form, Radio, Message, Button, Card, Grid, Container, Header, Segment, Icon, Label, Progress, Statistic } from 'semantic-ui-react';
-import { Router } from '../../routes';
+import { useRouter } from 'next/router';
 import AddAllowedVotersForm from '../../components/AddAllowedVotersForm';
 import CompletedVoteForm from '../../components/CompletedVoteForm';
 import withLoading from '../../components/withLoading';
 import LoadingPage from '../../components/LoadingPage';
 
 const VotingShow = ({ address }) => {
+  const router = useRouter();
   const [votingData, setVotingData] = useState({
     choiceVotes: [],
     choiceNames: [],
@@ -34,7 +35,7 @@ const VotingShow = ({ address }) => {
     const fetchVotingData = async () => {
       try {
         setLoading(true);
-        const votingAddress = address || Router.query.address;
+        const votingAddress = address || router.query.address;
         
         if (!votingAddress) {
           setError('No voting address provided');
@@ -61,7 +62,7 @@ const VotingShow = ({ address }) => {
         // Get vote counts
         for (let i = 0; i < totalChoices; i++) {
           const votes = await voting.methods.getVotes(i).call();
-          choiceVotes.push(votes);
+          choiceVotes.push(Number(votes)); // Convert BigInt to Number
         }
 
         function formatTimestamp(timestamp) {
@@ -81,11 +82,11 @@ const VotingShow = ({ address }) => {
           choiceVotes,
           choiceNames,
           manager: contractDetail[0],
-          totalChoices: contractDetail[1],
-          fromDate: formatTimestamp(contractDetail[2]),
-          endDate: formatTimestamp(contractDetail[3]),
+          totalChoices: Number(contractDetail[1]), // Convert BigInt to Number
+          fromDate: formatTimestamp(Number(contractDetail[2])), // Convert BigInt to Number
+          endDate: formatTimestamp(Number(contractDetail[3])), // Convert BigInt to Number
           completed: contractDetail[4],
-          totalVotersVoted: contractDetail[5],
+          totalVotersVoted: Number(contractDetail[5]), // Convert BigInt to Number
           title: contractDetail[6] || `Voting ${votingAddress.slice(0, 6)}...`,
           currentAccount,
           isManager: contractDetail[0].toLowerCase() === currentAccount.toLowerCase()
@@ -112,7 +113,7 @@ const VotingShow = ({ address }) => {
       const voting = Voting(votingData.address);
       await voting.methods.vote(value).send({ from: accounts[0] });
       setSuccessMessage(true);
-      Router.pushRoute(`/votings/${votingData.address}`);
+      router.push(`/votings/${votingData.address}`);
     } catch (err) {
       setErrorMessage(err.message);
     }
@@ -127,12 +128,12 @@ const VotingShow = ({ address }) => {
   };
 
   const getTotalVotes = () => {
-    return votingData.choiceVotes.reduce((sum, votes) => sum + parseInt(votes), 0);
+    return votingData.choiceVotes.reduce((sum, votes) => sum + Number(votes), 0);
   };
 
   const getVotePercentage = (votes) => {
     const total = getTotalVotes();
-    return total > 0 ? ((parseInt(votes) / total) * 100).toFixed(1) : 0;
+    return total > 0 ? ((Number(votes) / total) * 100).toFixed(1) : 0;
   };
 
   const renderChoices = () => {
@@ -140,7 +141,7 @@ const VotingShow = ({ address }) => {
     const totalVotes = getTotalVotes();
     
     for (let i = 0; i < votingData.totalChoices; i++) {
-      const votes = parseInt(votingData.choiceVotes[i]);
+      const votes = Number(votingData.choiceVotes[i]);
       const percentage = getVotePercentage(votes);
       
       choices.push(

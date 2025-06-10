@@ -1,6 +1,6 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
-const Web3 = require('web3');
+const { Web3 } = require('web3');
 const compiledFactory = require('./build/VotingFactory.json');
 
 const provider = new HDWalletProvider(

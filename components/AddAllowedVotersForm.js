@@ -1,75 +1,66 @@
-import React from "react";
+import React, { useState } from "react";
 import { Form, Message, Button, Input } from "semantic-ui-react";
 import web3 from "../ethereum/web3";
 import Voting from "../ethereum/voting";
-import { Router } from "../routes";
+import { useRouter } from "next/router";
 
-class AddAllowedVotersForm extends React.Component {
-  state = {
-    value: "",
-    errorMessage: "",
-    successMessage: false,
-    loading: false,
-  };
+const AddAllowedVotersForm = ({ address }) => {
+  const router = useRouter();
+  const [value, setValue] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  onSubmit = async (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault();
 
-    this.setState({
-      loading: true,
-      errorMessage: "",
-      successMessage: false,
-    });
+    setLoading(true);
+    setErrorMessage("");
+    setSuccessMessage(false);
 
     try {
       const accounts = await web3.eth.getAccounts();
-      const voting = Voting(this.props.address);
+      const voting = Voting(address);
 
-      await voting.methods.addVoter(this.state.value).send({
+      await voting.methods.addVoter(value).send({
         from: accounts[0],
       });
 
-      this.setState({
-        successMessage: true,
-        loading: false,
-        value: "",
-      });
-      Router.pushRoute(`/votings/${this.props.address}`);
+      setSuccessMessage(true);
+      setLoading(false);
+      setValue("");
+      router.push(`/votings/${address}`);
     } catch (err) {
-      this.setState({
-        errorMessage: err.message,
-        successMessage: false,
-        loading: false,
-      });
+      setErrorMessage(err.message);
+      setSuccessMessage(false);
+      setLoading(false);
     }
   };
 
-  render() {
-    return (
-      <Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
-        <Form.Field>
-          <label>Address of Allowed Voters</label>
-          <Input
-            value={this.state.value}
-            onChange={(event) => this.setState({ value: event.target.value })}
-          />
-        </Form.Field>
+  return (
+    <Form onSubmit={onSubmit} error={!!errorMessage}>
+      <Form.Field>
+        <label>Address of Allowed Voters</label>
+        <Input
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+        />
+      </Form.Field>
 
-        <Button loading={this.state.loading} primary>
-          Add Voter!
-        </Button>
+      <Button loading={loading} primary>
+        Add Voter!
+      </Button>
 
-        <Message error header="Oops!" content={this.state.errorMessage} />
-        {this.state.successMessage && (
-          <Message
-            positive
-            header="Success!"
-            content="Address Added Successfully"
-          />
-        )}
-      </Form>
-    );
-  }
-}
+      <Message error header="Oops!" content={errorMessage} />
+      {successMessage && (
+        <Message
+          positive
+          header="Success!"
+          content="Address Added Successfully"
+        />
+      )}
+    </Form>
+  );
+};
 
 export default AddAllowedVotersForm;

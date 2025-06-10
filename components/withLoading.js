@@ -1,42 +1,43 @@
-import React, { Component } from 'react';
-import { Router } from '../routes';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import LoadingPage from './LoadingPage';
 
 const withLoading = (WrappedComponent) => {
-  return class extends Component {
-    state = {
-      isLoading: false
-    };
+  return function WithLoadingComponent(props) {
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
-    componentDidMount() {
-      // Show loading when route changes
-      Router.onRouteChangeStart = () => {
-        this.setState({ isLoading: true });
+    useEffect(() => {
+      const handleStart = () => {
+        setIsLoading(true);
       };
 
-      Router.onRouteChangeComplete = () => {
-        this.setState({ isLoading: false });
+      const handleComplete = () => {
+        setIsLoading(false);
       };
 
-      Router.onRouteChangeError = () => {
-        this.setState({ isLoading: false });
+      const handleError = () => {
+        setIsLoading(false);
       };
-    }
 
-    componentWillUnmount() {
+      // Add event listeners
+      router.events.on('routeChangeStart', handleStart);
+      router.events.on('routeChangeComplete', handleComplete);
+      router.events.on('routeChangeError', handleError);
+
       // Clean up event listeners
-      Router.onRouteChangeStart = null;
-      Router.onRouteChangeComplete = null;
-      Router.onRouteChangeError = null;
+      return () => {
+        router.events.off('routeChangeStart', handleStart);
+        router.events.off('routeChangeComplete', handleComplete);
+        router.events.off('routeChangeError', handleError);
+      };
+    }, [router]);
+
+    if (isLoading) {
+      return <LoadingPage message="Loading Page..." />;
     }
 
-    render() {
-      if (this.state.isLoading) {
-        return <LoadingPage message="Loading Page..." />;
-      }
-
-      return <WrappedComponent {...this.props} />;
-    }
+    return <WrappedComponent {...props} />;
   };
 };
 

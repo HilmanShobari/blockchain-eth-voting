@@ -1,4 +1,4 @@
-import Web3 from "web3";
+import { Web3 } from "web3";
 require('dotenv').config();
 
 let web3;
@@ -10,8 +10,7 @@ if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
 } else {
   // We are on the server *OR* the user is not running metamask
   const rpcUrl = process.env.NEXT_PUBLIC_RPC || 'https://eth-mainnet.alchemyapi.io/v2/your-api-key';
-  const provider = new Web3.providers.HttpProvider(rpcUrl);
-  web3 = new Web3(provider);
+  web3 = new Web3(rpcUrl);
 }
  
 export default web3;

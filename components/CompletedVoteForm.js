@@ -1,77 +1,66 @@
-import React from "react";
+import React, { useState } from "react";
 import { Form, Message, Button } from "semantic-ui-react";
 import web3 from "../ethereum/web3";
 import Voting from "../ethereum/voting";
-import { Router } from "../routes";
+import { useRouter } from "next/router";
 
-class CompletedVoteForm extends React.Component {
-  state = {
-    value: "",
-    errorMessage: "",
-    successMessage: false,
-    loading: false
-  };
+const CompletedVoteForm = ({ address }) => {
+  const router = useRouter();
+  const [loadingCompletedVote, setLoadingCompletedVote] = useState(false);
+  const [errorMessageCompletedVote, setErrorMessageCompletedVote] = useState("");
+  const [successMessageCompletedVote, setSuccessMessageCompletedVote] = useState(false);
 
-  completedVote = async (event) => {
+  const completedVote = async (event) => {
     event.preventDefault();
-    this.setState({
-      loadingCompletedVote: true,
-      errorMessageCompletedVote: "",
-      successMessageCompletedVote: false,
-    });
+    setLoadingCompletedVote(true);
+    setErrorMessageCompletedVote("");
+    setSuccessMessageCompletedVote(false);
+
     try {
       const accounts = await web3.eth.getAccounts();
-      const voting = Voting(this.props.address);
+      const voting = Voting(address);
       await voting.methods.complete().send({
         from: accounts[0],
       });
 
       const completed = await voting.methods.completed().call();
       if (!completed) {
-        this.setState({
-          errorMessageCompletedVote: "Voting completion failed",
-          loadingCompletedVote: false,
-        });
+        setErrorMessageCompletedVote("Voting completion failed");
+        setLoadingCompletedVote(false);
       } else {
-        this.setState({
-          successMessageCompletedVote: true,
-          loadingCompletedVote: false
-        });
+        setSuccessMessageCompletedVote(true);
+        setLoadingCompletedVote(false);
       }
-      Router.pushRoute(`/votings/${this.props.address}`);
+      router.push(`/votings/${address}`);
     } catch (err) {
-      this.setState({
-        errorMessageCompletedVote: err.message,
-        successMessageCompletedVote: false,
-        loadingCompletedVote: false,
-      });
+      setErrorMessageCompletedVote(err.message);
+      setSuccessMessageCompletedVote(false);
+      setLoadingCompletedVote(false);
     }
   };
 
-  render() {
-    return (
-      <Form
-        onSubmit={this.completedVote}
-        error={!!this.state.errorMessageCompletedVote}
-      >
-        <Button loading={this.state.loadingCompletedVote} primary>
-          Complete Vote
-        </Button>
+  return (
+    <Form
+      onSubmit={completedVote}
+      error={!!errorMessageCompletedVote}
+    >
+      <Button loading={loadingCompletedVote} primary>
+        Complete Vote
+      </Button>
+      <Message
+        error
+        header="Oops!"
+        content={errorMessageCompletedVote}
+      />
+      {successMessageCompletedVote && (
         <Message
-          error
-          header="Oops!"
-          content={this.state.errorMessageCompletedVote}
+          positive
+          header="Success!"
+          content="Vote completed successfully!"
         />
-        {this.state.successMessageCompletedVote && (
-          <Message
-            positive
-            header="Success!"
-            content="Vote completed successfully!"
-          />
-        )}
-      </Form>
-    );
-  }
-}
+      )}
+    </Form>
+  );
+};
 
 export default CompletedVoteForm;

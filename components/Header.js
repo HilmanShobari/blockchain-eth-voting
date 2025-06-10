@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, Container, Button, Icon } from 'semantic-ui-react';
-import { Link } from '../routes';
+import Link from 'next/link';
 
 const Header = () => {
   return (
@@ -18,8 +18,8 @@ const Header = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-          <Link route="/">
-            <a
+          <Link href="/">
+            <div
               style={{
                 textDecoration: 'none',
                 color: 'white',
@@ -30,7 +30,7 @@ const Header = () => {
                 gap: '10px',
               }}>
               <Icon name="shield" size="large" />E Vote Block
-            </a>
+            </div>
           </Link>
         </div>
       </Container>
