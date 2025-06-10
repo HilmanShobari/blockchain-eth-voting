@@ -3,6 +3,7 @@ import { Form, Message, Button, Input } from "semantic-ui-react";
 import provider from "../ethereum/ethers";
 import Voting from "../ethereum/voting";
 import { useRouter } from "next/router";
+import { parseBlockchainError } from '../utils/errorHandler';
 
 const AddAllowedVotersForm = ({ address }) => {
   const router = useRouter();
@@ -40,7 +41,8 @@ const AddAllowedVotersForm = ({ address }) => {
         window.location.reload();
       }, 2000);
     } catch (err) {
-      setErrorMessage(err.message);
+      const parsedError = parseBlockchainError(err.message);
+      setErrorMessage(parsedError.message);
       setSuccessMessage(false);
       setLoading(false);
     }
