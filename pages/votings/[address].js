@@ -5,7 +5,6 @@ import provider from '../../ethereum/ethers';
 import { Form, Radio, Message, Button, Card, Grid, Container, Header, Segment, Icon, Label, Progress, Statistic } from 'semantic-ui-react';
 import { useRouter } from 'next/router';
 import AddAllowedVotersForm from '../../components/AddAllowedVotersForm';
-import CompletedVoteForm from '../../components/CompletedVoteForm';
 import withLoading from '../../components/withLoading';
 import LoadingPage from '../../components/LoadingPage';
 import ErrorModal from '../../components/ErrorModal';
@@ -373,10 +372,6 @@ const VotingShow = ({ address }) => {
                   
                   <div style={{ marginBottom: '20px' }}>
                     <AddAllowedVotersForm address={votingData.address} />
-                  </div>
-                  
-                  <div>
-                    <CompletedVoteForm address={votingData.address} />
                   </div>
                 </Segment>
               </Grid.Column>
