@@ -6,12 +6,15 @@ contract VotingFactory {
     address[] public deployedVotings;
 
     function createVoting(
-        uint8 choices,
+        string memory title,
+        string[] memory choiceNames,
         uint32 fromDate,
         uint32 endDate
     ) external {
         deployedVotings.push(
-            address(new Voting(choices, fromDate, endDate, msg.sender))
+            address(
+                new Voting(title, choiceNames, fromDate, endDate, msg.sender)
+            )
         );
     }
 
@@ -32,6 +35,10 @@ contract Voting {
     uint32 public totalVotersVoted;
     uint32 public totalAllowedVoters;
 
+    // New fields for title and choice names
+    string public title;
+    string[] public choiceNames;
+
     // Mappings (each entry uses 1 storage slot)
     mapping(address => bool) public votedVoters;
     mapping(address => bool) public allowedVoters;
@@ -48,13 +55,16 @@ contract Voting {
     }
 
     constructor(
-        uint8 _totalChoices,
+        string memory _title,
+        string[] memory _choiceNames,
         uint32 _fromDate,
         uint32 _endDate,
         address _manager
     ) {
         manager = _manager;
-        totalChoices = _totalChoices;
+        title = _title;
+        choiceNames = _choiceNames;
+        totalChoices = uint8(_choiceNames.length);
         fromDate = _fromDate;
         endDate = _endDate;
         // Other variables default to 0/false (saves gas)
@@ -98,10 +108,19 @@ contract Voting {
         return choiceVotes[choice];
     }
 
+    function getChoiceName(uint8 choice) external view returns (string memory) {
+        require(choice < totalChoices, "Invalid choice");
+        return choiceNames[choice];
+    }
+
+    function getAllChoiceNames() external view returns (string[] memory) {
+        return choiceNames;
+    }
+
     function getStatus()
         external
         view
-        returns (address, uint8, uint32, uint32, bool, uint32)
+        returns (address, uint8, uint32, uint32, bool, uint32, string memory)
     {
         return (
             manager,
@@ -109,7 +128,8 @@ contract Voting {
             fromDate,
             endDate,
             completed,
-            totalVotersVoted
+            totalVotersVoted,
+            title
         );
     }
 }

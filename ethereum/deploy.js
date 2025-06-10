@@ -20,7 +20,7 @@ const deploy = async () => {
     const result = await new web3.eth.Contract(compiledFactory.abi).deploy({ data: compiledFactory.evm.bytecode.object }).send({ from: accounts[0], maxPriorityFeePerGas: web3.utils.toWei('25', 'gwei'), maxFeePerGas: web3.utils.toWei('30', 'gwei') });
 
     console.log('Contract deployed to', result.options.address);
-    console.log('Factory abi', JSON.stringify(compiledFactory.abi));
+    // console.log('Factory abi', JSON.stringify(compiledFactory.abi));
     provider.engine.stop();
   } catch (error) {
     console.log('error:', error);

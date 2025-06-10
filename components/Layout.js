@@ -5,10 +5,15 @@ import { Container } from "semantic-ui-react";
 
 const Layout = (props) => {
     return (
-        <Container>
+        <div style={{ 
+            minHeight: '100vh',
+            backgroundColor: '#f8f9fa'
+        }}>
             <Header/>
-            {props.children}
-        </Container>
+            <div style={{ paddingTop: '0' }}>
+                {props.children}
+            </div>
+        </div>
     );
 };
 

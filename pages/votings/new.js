@@ -1,47 +1,66 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import Layout from '../../components/Layout';
-import { Button, Form, Input, Message } from 'semantic-ui-react';
+import { Button, Form, Input, Message, Container, Header, Segment, Icon, Label } from 'semantic-ui-react';
 import factory from '../../ethereum/factory';
 import web3 from '../../ethereum/web3';
 import { Router } from '../../routes';
 import DatePicker from 'react-datepicker';
+import withLoading from '../../components/withLoading';
 
 import 'react-datepicker/dist/react-datepicker.css';
 
-class VotingNew extends Component {
-  state = {
-    numberOfChoice: '',
-    endDate: '',
-    errorMessage: '',
-    successMessage: false,
-    loading: false,
-  };
+const VotingNew = () => {
+  const [title, setTitle] = useState('');
+  const [choices, setChoices] = useState(['', '']);
+  const [endDate, setEndDate] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  onSubmit = async (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault();
 
-    this.setState({ loading: true, errorMessage: '', successMessage: false });
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage(false);
 
     try {
+      // Validation
+      if (!title.trim()) {
+        throw new Error('Please enter a voting title');
+      }
+      
+      const validChoices = choices.filter(choice => choice.trim() !== '');
+      if (validChoices.length < 2) {
+        throw new Error('Please enter at least 2 choices');
+      }
+      
+      if (!endDate) {
+        throw new Error('Please select an end date');
+      }
+
       const startDateTimestamp = Math.floor(new Date().getTime() / 1000);
-      const endDateTimestamp = Math.floor(this.state.endDate / 1000);
+      const endDateTimestamp = Math.floor(endDate / 1000);
 
       const accounts = await web3.eth.getAccounts();
-      console.log(accounts[0]);
-      await factory.methods.createVoting(this.state.numberOfChoice, startDateTimestamp, endDateTimestamp).send({
+      await factory.methods.createVoting(
+        title.trim(),
+        validChoices,
+        startDateTimestamp, 
+        endDateTimestamp
+      ).send({
         from: accounts[0],
       });
 
-      // this.setState({ successMessage: true });
-      Router.pushRoute('/');
+      Router.pushRoute('/manager');
     } catch (err) {
-      this.setState({ errorMessage: err.message });
+      setErrorMessage(err.message);
     }
 
-    this.setState({ loading: false });
+    setLoading(false);
   };
 
-  handleEndDateChange(date) {
+  const handleEndDateChange = (date) => {
     const selectedDate = date;
     const currentDate = new Date();
 
@@ -49,33 +68,182 @@ class VotingNew extends Component {
       alert('You cannot select a date before today');
       return;
     }
-    this.setState({ endDate: selectedDate });
-  }
+    setEndDate(selectedDate);
+  };
 
-  render() {
-    return (
-      <Layout>
-        <h1>Create A Voting</h1>
+  const addChoice = () => {
+    setChoices([...choices, '']);
+  };
 
-        <Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
-          <Form.Field>
-            <label>Number Of Choice</label>
-            <Input label="number" labelPosition="right" value={this.state.numberOfChoice} onChange={(event) => this.setState({ numberOfChoice: event.target.value })} />
+  const removeChoice = (index) => {
+    if (choices.length > 2) {
+      const newChoices = choices.filter((_, i) => i !== index);
+      setChoices(newChoices);
+    }
+  };
 
-            <label>End Date of Voting</label>
-            <DatePicker value={this.state.endDate} selected={this.state.endDate} onChange={(event) => this.handleEndDateChange(event)} showTimeSelect dateFormat="Pp" />
-          </Form.Field>
+  const updateChoice = (index, value) => {
+    const newChoices = [...choices];
+    newChoices[index] = value;
+    setChoices(newChoices);
+  };
 
-          <Button loading={this.state.loading} primary>
-            Create
-          </Button>
+  return (
+    <Layout>
+      <Container style={{ padding: '20px 0' }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+          borderRadius: '15px', 
+          padding: '30px', 
+          marginBottom: '30px',
+          color: 'white',
+          textAlign: 'center'
+        }}>
+          <Header as="h1" style={{ color: 'white', marginBottom: '10px' }}>
+            <Icon name="plus circle" />
+            Create New Voting Campaign
+          </Header>
+          <p style={{ fontSize: '1.1em', opacity: '0.9' }}>
+            Set up a new blockchain-based voting campaign
+          </p>
+        </div>
 
-          <Message error header="Oops!" content={this.state.errorMessage} />
-          {this.state.successMessage && <Message positive header="Success!" content="Voting Created!" />}
-        </Form>
-      </Layout>
-    );
-  }
-}
+        <Segment style={{ padding: '40px', borderRadius: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <Form onSubmit={onSubmit} error={!!errorMessage}>
+            
+            {/* Title Field */}
+            <Form.Field style={{ marginBottom: '25px' }}>
+              <label style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#2c3e50', marginBottom: '10px', display: 'block' }}>
+                <Icon name="header" color="blue" /> Voting Title
+              </label>
+              <Input 
+                placeholder="Enter the title of your voting campaign" 
+                value={title} 
+                onChange={(event) => setTitle(event.target.value)}
+                style={{ fontSize: '1.1em' }}
+                size="large"
+              />
+            </Form.Field>
 
-export default VotingNew;
+            {/* Choices Section */}
+            <Form.Field style={{ marginBottom: '25px' }}>
+              <label style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#2c3e50', marginBottom: '15px', display: 'block' }}>
+                <Icon name="list" color="green" /> Voting Choices
+              </label>
+              
+              {choices.map((choice, index) => (
+                <div key={index} style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Label 
+                    circular 
+                    color="blue" 
+                    size="large"
+                    style={{ minWidth: '35px', textAlign: 'center' }}
+                  >
+                    {index + 1}
+                  </Label>
+                  <Input 
+                    placeholder={`Enter choice ${index + 1}`}
+                    value={choice}
+                    onChange={(event) => updateChoice(index, event.target.value)}
+                    style={{ flex: '1' }}
+                    size="large"
+                  />
+                  {choices.length > 2 && (
+                    <Button 
+                      type="button"
+                      icon="trash" 
+                      color="red"
+                      size="large"
+                      onClick={() => removeChoice(index)}
+                      style={{ borderRadius: '50%' }}
+                    />
+                  )}
+                </div>
+              ))}
+              
+              <Button 
+                type="button"
+                onClick={addChoice}
+                icon
+                labelPosition="left"
+                color="green"
+                style={{ marginTop: '10px', borderRadius: '20px' }}
+                size="medium"
+              >
+                <Icon name="plus" />
+                Add Choice
+              </Button>
+            </Form.Field>
+
+            {/* End Date Field */}
+            <Form.Field style={{ marginBottom: '30px' }}>
+              <label style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#2c3e50', marginBottom: '10px', display: 'block' }}>
+                <Icon name="calendar" color="orange" /> End Date & Time
+              </label>
+              <div style={{ 
+                border: '1px solid #ddd', 
+                borderRadius: '10px', 
+                padding: '15px',
+                backgroundColor: '#f8f9fb'
+              }}>
+                <DatePicker 
+                  value={endDate} 
+                  selected={endDate} 
+                  onChange={(event) => handleEndDateChange(event)} 
+                  showTimeSelect 
+                  dateFormat="Pp"
+                  placeholderText="Select end date and time"
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px', 
+                    fontSize: '1.1em',
+                    border: 'none',
+                    backgroundColor: 'transparent'
+                  }}
+                />
+              </div>
+            </Form.Field>
+
+            {/* Submit Button */}
+            <div style={{ textAlign: 'center', marginTop: '30px' }}>
+              <Button 
+                loading={loading}
+                size="huge"
+                style={{ 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '25px',
+                  padding: '15px 40px',
+                  fontWeight: 'bold'
+                }}
+                icon
+                labelPosition="left"
+              >
+                <Icon name="rocket" />
+                Create Voting Campaign
+              </Button>
+            </div>
+
+            <Message 
+              error 
+              header="Error!" 
+              content={errorMessage} 
+              style={{ borderRadius: '10px', marginTop: '20px' }}
+            />
+            {successMessage && (
+              <Message 
+                positive 
+                header="Success!" 
+                content="Voting campaign created successfully!" 
+                style={{ borderRadius: '10px', marginTop: '20px' }}
+              />
+            )}
+          </Form>
+        </Segment>
+      </Container>
+    </Layout>
+  );
+};
+
+export default withLoading(VotingNew);
