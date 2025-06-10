@@ -1,12 +1,14 @@
-import web3 from './web3';
+import { ethers } from 'ethers';
+import provider from './ethers';
 import VotingFactory from './build/VotingFactory.json'
 require('dotenv').config();
 
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
-const instance = new web3.eth.Contract(
+const instance = new ethers.Contract(
+    contractAddress,
     VotingFactory.abi,
-    contractAddress
+    provider
 );
 
 export default instance;

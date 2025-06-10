@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Message, Button, Input } from "semantic-ui-react";
-import web3 from "../ethereum/web3";
+import provider from "../ethereum/ethers";
 import Voting from "../ethereum/voting";
 import { useRouter } from "next/router";
 
@@ -19,12 +19,11 @@ const AddAllowedVotersForm = ({ address }) => {
     setSuccessMessage(false);
 
     try {
-      const accounts = await web3.eth.getAccounts();
+      const signer = await provider.getSigner();
       const voting = Voting(address);
+      const votingWithSigner = voting.connect(signer);
 
-      await voting.methods.addVoter(value).send({
-        from: accounts[0],
-      });
+      await votingWithSigner.addVoter(value);
 
       setSuccessMessage(true);
       setLoading(false);

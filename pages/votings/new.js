@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import { Button, Form, Input, Message, Container, Header, Segment, Icon, Label } from 'semantic-ui-react';
 import factory from '../../ethereum/factory';
-import web3 from '../../ethereum/web3';
+import provider from '../../ethereum/ethers';
 import { useRouter } from 'next/router';
 import DatePicker from 'react-datepicker';
 import withLoading from '../../components/withLoading';
@@ -43,15 +43,24 @@ const VotingNew = () => {
       const startDateTimestamp = Math.floor(new Date().getTime() / 1000);
       const endDateTimestamp = Math.floor(endDate / 1000);
 
-      const accounts = await web3.eth.getAccounts();
-      await factory.methods.createVoting(
+      // Check wallet connection
+      if (typeof window === 'undefined') {
+        throw new Error('Browser environment required');
+      }
+      
+      if (!window.ethereum) {
+        throw new Error('MetaMask not detected. Please install MetaMask to continue.');
+      }
+
+      console.log('Getting signer for transaction...');
+      const signer = await provider.getSigner();
+      const factoryWithSigner = factory.connect(signer);
+      await factoryWithSigner.createVoting(
         title.trim(),
         validChoices,
         startDateTimestamp, 
         endDateTimestamp
-      ).send({
-        from: accounts[0],
-      });
+      );
 
       router.push('/manager');
     } catch (err) {

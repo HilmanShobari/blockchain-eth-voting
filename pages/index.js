@@ -17,7 +17,7 @@ const VotingIndex = () => {
       try {
         setLoading(true);
         console.log('Fetching deployed votings...');
-        const allVotings = await factory.methods.getDeployedVotings().call();
+        const allVotings = await factory.getDeployedVotings();
         console.log('All votings:', allVotings);
 
         const votingsWithDetails = [];
@@ -26,7 +26,7 @@ const VotingIndex = () => {
           try {
             console.log('Processing voting:', address);
             const voting = Voting(address);
-            const contractDetail = await voting.methods.getStatus().call();
+            const contractDetail = await voting.getStatus();
             console.log('Contract detail:', contractDetail);
 
             const manager = contractDetail[0];

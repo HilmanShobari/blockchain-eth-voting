@@ -1,31 +1,41 @@
 require('dotenv').config();
-const HDWalletProvider = require('@truffle/hdwallet-provider');
-const { Web3 } = require('web3');
+const { ethers } = require('ethers');
 const compiledFactory = require('./build/VotingFactory.json');
-
-const provider = new HDWalletProvider(
-  process.env.NEXT_PUBLIC_MNEMONIC_PHRASE,
-  // remember to change this to your own phrase!
-  process.env.NEXT_PUBLIC_RPC
-  // remember to change this to your own endpoint!
-);
-const web3 = new Web3(provider);
 
 const deploy = async () => {
   try {
-    const accounts = await web3.eth.getAccounts();
+    // Create provider
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC);
+    
+    // Create wallet from mnemonic
+    const wallet = ethers.Wallet.fromPhrase(process.env.NEXT_PUBLIC_MNEMONIC_PHRASE);
+    const signer = wallet.connect(provider);
 
-    console.log('Attempting to deploy from account', accounts[0]);
+    console.log('Attempting to deploy from account', await signer.getAddress());
 
-    const result = await new web3.eth.Contract(compiledFactory.abi).deploy({ data: compiledFactory.evm.bytecode.object }).send({ from: accounts[0], maxPriorityFeePerGas: web3.utils.toWei('25', 'gwei'), maxFeePerGas: web3.utils.toWei('30', 'gwei') });
+    // Create contract factory
+    const contractFactory = new ethers.ContractFactory(
+      compiledFactory.abi,
+      compiledFactory.evm.bytecode.object,
+      signer
+    );
 
-    console.log('Contract deployed to', result.options.address);
-    // console.log('Factory abi', JSON.stringify(compiledFactory.abi));
-    provider.engine.stop();
+    // Deploy contract
+    const contract = await contractFactory.deploy({
+      maxPriorityFeePerGas: ethers.parseUnits('25', 'gwei'),
+      maxFeePerGas: ethers.parseUnits('30', 'gwei')
+    });
+
+    // Wait for deployment
+    await contract.waitForDeployment();
+    const contractAddress = await contract.getAddress();
+
+    console.log('Contract deployed to', contractAddress);
   } catch (error) {
     console.log('error:', error);
   }
 };
+
 deploy();
 
 // Contract deployed to xxx (contract factory address)

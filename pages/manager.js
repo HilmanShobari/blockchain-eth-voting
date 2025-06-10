@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Grid, Container, Header, Segment, Icon, Label, Modal } from 'semantic-ui-react';
 import factory from '../ethereum/factory';
 import Voting from '../ethereum/voting';
-import web3 from '../ethereum/web3';
+import provider from '../ethereum/ethers';
+import { getSaferSigner, checkMetaMaskStatus } from '../utils/ethersHelper';
 import Layout from '../components/Layout';
 import Link from 'next/link';
 import AddAllowedVotersForm from '../components/AddAllowedVotersForm';
@@ -20,19 +21,34 @@ const ManagerPage = () => {
   useEffect(() => {
     const fetchMyVotings = async () => {
       try {
+        console.log('Fetching my votings...');
         setLoading(true);
-        const accounts = await web3.eth.getAccounts();
-        if (!accounts || accounts.length === 0) {
-          console.log('No accounts found');
+        
+        // Check MetaMask status first
+        const metamaskStatus = checkMetaMaskStatus();
+        console.log('MetaMask status check:', metamaskStatus);
+        
+        if (metamaskStatus.status !== 'ready') {
+          setError(metamaskStatus.message);
+          return;
+        }
+        
+        console.log('Getting signer using safer method...');
+        const signer = await getSaferSigner();
+        console.log('Signer obtained successfully');
+        
+        console.log('Getting account address...');
+        const account = await signer.getAddress();
+        console.log('Account address:', account);
+        if (!account) {
+          console.log('No account found');
           setError('No wallet connected');
           return;
         }
-
-        const account = accounts[0];
         setCurrentAccount(account);
         console.log('Current account:', account);
 
-        const allVotings = await factory.methods.getDeployedVotings().call();
+        const allVotings = await factory.getDeployedVotings();
         console.log('All votings:', allVotings);
 
         // Filter votings created by current user
@@ -42,7 +58,7 @@ const ManagerPage = () => {
           try {
             console.log('Checking voting:', address);
             const voting = Voting(address);
-            const contractDetail = await voting.methods.getStatus().call();
+            const contractDetail = await voting.getStatus();
             console.log('Contract detail:', contractDetail);
 
             const manager = contractDetail[0];

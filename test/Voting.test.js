@@ -1,71 +1,80 @@
 const assert = require("assert");
-const ganache = require("ganache-cli");
-const Web3 = require("web3");
-const web3 = new Web3(ganache.provider());
+const { ethers } = require("ethers");
 
 const compiledFactory = require("../ethereum/build/VotingFactory.json");
 const compiledVoting = require("../ethereum/build/Voting.json");
 
-let accounts;
+let provider;
+let signers;
 let factory;
 let votingAddress;
 let voting;
 
 beforeEach(async () => {
-  accounts = await web3.eth.getAccounts();
+  // Create a local provider for testing
+  provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+  signers = await ethers.getSigners();
 
-  factory = await new web3.eth.Contract(compiledFactory.abi)
-    .deploy({ data: compiledFactory.evm.bytecode.object })
-    .send({ from: accounts[0], gas: "3000000" });
+  // Deploy factory contract
+  const factoryFactory = new ethers.ContractFactory(
+    compiledFactory.abi,
+    compiledFactory.evm.bytecode.object,
+    signers[0]
+  );
+  
+  factory = await factoryFactory.deploy();
+  await factory.waitForDeployment();
 
   // Create timestamps for voting period
   const startTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
   const endTime = Math.floor(Date.now() / 1000) - 60; // 1 minute ago (already ended)
 
-  await factory.methods.createVoting(2, startTime, endTime).send({
-    from: accounts[0],
-    gas: "3000000"
-  });
+  // Create voting with title and choices
+  const title = "Test Voting";
+  const choices = ["Option A", "Option B"];
+  
+  await factory.createVoting(title, choices, startTime, endTime);
 
-  [votingAddress] = await factory.methods.getDeployedVotings().call();
-  voting = await new web3.eth.Contract(
+  const deployedVotings = await factory.getDeployedVotings();
+  votingAddress = deployedVotings[0];
+  
+  voting = new ethers.Contract(
+    votingAddress,
     compiledVoting.abi,
-    votingAddress
+    signers[0]
   );
 });
 
 describe("Optimized Voting", () => {
-  it("deploys a factory and a voting", () => {
-    assert.ok(factory.options.address);
-    assert.ok(voting.options.address);
+  it("deploys a factory and a voting", async () => {
+    const factoryAddress = await factory.getAddress();
+    const votingAddr = await voting.getAddress();
+    assert.ok(factoryAddress);
+    assert.ok(votingAddr);
   });
 
   it("marks caller as the voting manager", async () => {
-    const manager = await voting.methods.manager().call();
-    assert.equal(accounts[0], manager);
+    const manager = await voting.manager();
+    const signerAddress = await signers[0].getAddress();
+    assert.equal(signerAddress, manager);
   });
 
   it("allows manager to add voters", async () => {
-    await voting.methods.addVoter(accounts[1]).send({
-      from: accounts[0],
-      gas: "100000"
-    });
+    const voterAddress = await signers[1].getAddress();
+    await voting.addVoter(voterAddress);
     
-    const isAllowed = await voting.methods.allowedVoters(accounts[1]).call();
+    const isAllowed = await voting.allowedVoters(voterAddress);
     assert(isAllowed);
   });
 
   it("can complete vote after voting period ends", async () => {
-    const totalVoters = await voting.methods.totalVotersVoted().call();
+    const totalVoters = await voting.totalVotersVoted();
     
-    await voting.methods.complete().send({
-      from: accounts[0],
-      gas: "100000"
-    });
+    await voting.complete();
     
-    const completed = await voting.methods.completed().call();
+    const completed = await voting.completed();
 
-    console.log("Total voters:", totalVoters);
+    console.log("Total voters:", totalVoters.toString());
     console.log("Completed:", completed);
     
     assert(completed);

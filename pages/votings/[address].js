@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import Voting from '../../ethereum/voting';
-import web3 from '../../ethereum/web3';
+import provider from '../../ethereum/ethers';
 import { Form, Radio, Message, Button, Card, Grid, Container, Header, Segment, Icon, Label, Progress, Statistic } from 'semantic-ui-react';
 import { useRouter } from 'next/router';
 import AddAllowedVotersForm from '../../components/AddAllowedVotersForm';
@@ -43,7 +43,7 @@ const VotingShow = ({ address }) => {
         }
 
         const voting = Voting(votingAddress);
-        const contractDetail = await voting.methods.getStatus().call();
+        const contractDetail = await voting.getStatus();
 
         let choiceVotes = [];
         let choiceNames = [];
@@ -51,7 +51,7 @@ const VotingShow = ({ address }) => {
 
         // Get choice names
         try {
-          choiceNames = await voting.methods.getAllChoiceNames().call();
+          choiceNames = await voting.getAllChoiceNames();
         } catch (error) {
           // Fallback for older contracts without choice names
           for (let i = 0; i < totalChoices; i++) {
@@ -61,7 +61,7 @@ const VotingShow = ({ address }) => {
 
         // Get vote counts
         for (let i = 0; i < totalChoices; i++) {
-          const votes = await voting.methods.getVotes(i).call();
+          const votes = await voting.getVotes(i);
           choiceVotes.push(Number(votes)); // Convert BigInt to Number
         }
 
@@ -74,8 +74,8 @@ const VotingShow = ({ address }) => {
           };
         }
 
-        const accounts = await web3.eth.getAccounts();
-        const currentAccount = accounts[0];
+        const signer = await provider.getSigner();
+        const currentAccount = await signer.getAddress();
 
         setVotingData({
           address: votingAddress,
@@ -109,9 +109,10 @@ const VotingShow = ({ address }) => {
     setSuccessMessage(false);
 
     try {
-      const accounts = await web3.eth.getAccounts();
+      const signer = await provider.getSigner();
       const voting = Voting(votingData.address);
-      await voting.methods.vote(value).send({ from: accounts[0] });
+      const votingWithSigner = voting.connect(signer);
+      await votingWithSigner.vote(value);
       setSuccessMessage(true);
       router.push(`/votings/${votingData.address}`);
     } catch (err) {
